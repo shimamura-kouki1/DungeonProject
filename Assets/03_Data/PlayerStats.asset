@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 683000af5a4044041904347a096cab2a, type: 3}
+  m_Name: PlayerStats
+  m_EditorClassIdentifier: 
+  _maxHp: 100
+  _attackStats: 10
+  _attackSpeed: 1
+  _defense: 10
+  _maxStamina: 100
+  _maxMp: 50
+  _defenseK: 100
+  _moveSpeed: 5
+  _rotationSpeed: 720
+  _dashSpeed: 10
+  _dashDuration: 0.2
+  _dashStaminaCost: 15
+  _dodgeSpeed: 12
+  _dodgeDuration: 0.3
+  _dodgeInvincibleDuration: 0.2
+  _dodgeStaminaCost: 20
+  _guardDamageReductionRate: 0.8
+  _guardStaminaDrainPerSecond: 10
+  _guardBreakStaminaThreshold: 0
+  _attackStaminaCost: 10
+  _attackDuration: 0.4
+  _staminaRegenPerSecond: 20
+  _staminaRegenDelay: 0.5

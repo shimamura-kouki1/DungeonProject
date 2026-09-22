@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// プレイヤーの入力受付・移動・状態遷移を担当するMonoBehaviour。
@@ -74,7 +75,6 @@ public class PlayerController : MonoBehaviour, IDamageable
 
     private void Update()
     {
-        ReadInput();
         _runtimeState.TickStaminaRegen(Time.deltaTime);
 
         switch (CurrentState)
@@ -102,32 +102,98 @@ public class PlayerController : MonoBehaviour, IDamageable
 
     // ---------------- 入力 ----------------
 
-    private void ReadInput()
+    public void OnMove(InputAction.CallbackContext context)
     {
-        _moveInput.x = Input.GetAxisRaw("Horizontal");
-        _moveInput.y = Input.GetAxisRaw("Vertical");
+        _moveInput = context.ReadValue<Vector2>();
         _moveDirWorld = CameraRelativeDirection(_moveInput);
+    }
 
-        // 行動不能な状態（Dash/Dodge/Guard/Attack）では新規入力を受け付けない（MVPではシンプルに排他制御）
-        bool canStartNewAction = CurrentState == PlayerActionState.Idle || CurrentState == PlayerActionState.Move;
-        if (!canStartNewAction) return;
+    /// <summary>
+    /// Attack Actionから呼ばれる。
+    /// </summary>
+    public void OnAttack(InputAction.CallbackContext context)
+    {
+        // ボタンを押した瞬間だけ処理する
+        if (!context.performed)
+        {
+            return;
+        }
 
-        if (Input.GetButtonDown("Fire1")) // 攻撃
+        if (!CanStartNewAction())
         {
-            TryStartAttack();
+            return;
         }
-        else if (Input.GetButtonDown("Dodge")) // 回避（Input Managerに要追加。無ければLeftControl等で代用）
+
+        TryStartAttack();
+    }
+
+    /// <summary>
+    /// Dodge Actionから呼ばれる。
+    /// </summary>
+    public void OnDodge(InputAction.CallbackContext context)
+    {
+        if (!context.performed)
         {
-            TryStartDodge();
+            return;
         }
-        else if (Input.GetButtonDown("Dash")) // ダッシュ（Input Managerに要追加）
+
+        if (!CanStartNewAction())
         {
-            TryStartDash();
+            return;
         }
-        else if (Input.GetButton("Guard")) // 防御（長押し。Input Managerに要追加）
+
+        TryStartDodge();
+    }
+
+    /// <summary>
+    /// Dash Actionから呼ばれる。
+    /// </summary>
+    public void OnDash(InputAction.CallbackContext context)
+    {
+        if (!context.performed)
         {
-            TryStartGuard();
+            return;
         }
+
+        if (!CanStartNewAction())
+        {
+            return;
+        }
+
+        TryStartDash();
+    }
+
+    /// <summary>
+    /// Guard Actionから呼ばれる。
+    /// 押している間だけガードする。
+    /// </summary>
+    public void OnGuard(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            if (CanStartNewAction())
+            {
+                TryStartGuard();
+            }
+        }
+
+        if (context.canceled)
+        {
+            if (CurrentState == PlayerActionState.Guard)
+            {
+                CurrentState = PlayerActionState.Idle;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Dash / Dodge / Guard / Attack中は
+    /// 新しい行動を開始できない。
+    /// </summary>
+    private bool CanStartNewAction()
+    {
+        return CurrentState == PlayerActionState.Idle
+            || CurrentState == PlayerActionState.Move;
     }
 
     private Vector3 CameraRelativeDirection(Vector2 input)
@@ -153,7 +219,6 @@ public class PlayerController : MonoBehaviour, IDamageable
         {
             CurrentState = PlayerActionState.Move;
             Move(_moveDirWorld, _stats.MoveSpeed);
-            RotateTowards(_moveDirWorld);
         }
         else
         {
@@ -225,14 +290,11 @@ public class PlayerController : MonoBehaviour, IDamageable
 
     private void UpdateGuard()
     {
-        // 長押しが離されたらガード解除
-        if (!Input.GetButton("Guard"))
-        {
-            CurrentState = PlayerActionState.Idle;
-            return;
-        }
+        bool stillHasStamina =
+               _runtimeState.ConsumeStaminaOverTime(
+                   _stats.GuardStaminaDrainPerSecond,
+                   Time.deltaTime);
 
-        bool stillHasStamina = _runtimeState.ConsumeStaminaOverTime(_stats.GuardStaminaDrainPerSecond, Time.deltaTime);
         if (!stillHasStamina)
         {
             // ガードブレイク
