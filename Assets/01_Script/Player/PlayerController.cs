@@ -247,8 +247,8 @@ public class PlayerController : MonoBehaviour, IDamageable
         Vector3 dashDir = _moveDirWorld.sqrMagnitude > 0.0001f ? _moveDirWorld : transform.forward;
         Move(dashDir, _stats.DashSpeed);
 
-        bool stillHasStamina = _runtimeState.ConsumeStaminaOverTime(_stats.DashStaminaDrainPerSecond, Time.deltaTime);
-        if (!stillHasStamina)
+        _runtimeState.ConsumeStaminaOverTime(_stats.DashStaminaDrainPerSecond, Time.deltaTime);
+        if (_runtimeState.CurrentStamina <= 0f)
         {
             CurrentState = PlayerActionState.Idle;
         }
