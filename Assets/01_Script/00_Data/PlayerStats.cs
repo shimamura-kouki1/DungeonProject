@@ -29,8 +29,7 @@ public class PlayerStats : ScriptableObject
 
     [Header("ダッシュ")]
     [SerializeField] private float _dashSpeed = 10f;
-    [SerializeField] private float _dashDuration = 0.2f;
-    [SerializeField] private float _dashStaminaCost = 15f;
+    [SerializeField] private float _dashStaminaDrainPerSecond = 25f;
 
     [Header("回避（無敵フレーム付き）")]
     [SerializeField] private float _dodgeSpeed = 12f;
@@ -64,8 +63,7 @@ public class PlayerStats : ScriptableObject
     public float RotationSpeed => _rotationSpeed;
 
     public float DashSpeed => _dashSpeed;
-    public float DashDuration => _dashDuration;
-    public float DashStaminaCost => _dashStaminaCost;
+    public float DashStaminaDrainPerSecond => _dashStaminaDrainPerSecond;
 
     public float DodgeSpeed => _dodgeSpeed;
     public float DodgeDuration => _dodgeDuration;

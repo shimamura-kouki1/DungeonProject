@@ -150,17 +150,22 @@ public class PlayerController : MonoBehaviour, IDamageable
     /// </summary>
     public void OnDash(InputAction.CallbackContext context)
     {
-        if (!context.performed)
+        if (context.started)
         {
-            return;
+            if (CanStartNewAction())
+            {
+                TryStartDash();
+            }
         }
 
-        if (!CanStartNewAction())
+        if(context.canceled)
         {
-            return;
+            if(CurrentState == PlayerActionState.Dash)
+            {
+                CurrentState = PlayerActionState.Idle;
+            }
         }
-
-        TryStartDash();
+    
     }
 
     /// <summary>
@@ -230,20 +235,20 @@ public class PlayerController : MonoBehaviour, IDamageable
 
     private void TryStartDash()
     {
-        if (!_runtimeState.TryConsumeStamina(_stats.DashStaminaCost)) return;
+        // スタミナが1でも残っていれば開始できる（枯渇していたら開始不可）
+        if (_runtimeState.CurrentStamina <= 0f) return;
 
-        // 入力方向があればその方向、無ければ現在の向きへダッシュ
-        _stateMoveDirection = _moveDirWorld.sqrMagnitude > 0.0001f ? _moveDirWorld : transform.forward;
-        _stateTimer = _stats.DashDuration;
         CurrentState = PlayerActionState.Dash;
     }
 
     private void UpdateDash()
     {
-        Move(_stateMoveDirection, _stats.DashSpeed);
+        // 移動入力の方向にダッシュ。入力が無ければ現在向いている方向のまま進む
+        Vector3 dashDir = _moveDirWorld.sqrMagnitude > 0.0001f ? _moveDirWorld : transform.forward;
+        Move(dashDir, _stats.DashSpeed);
 
-        _stateTimer -= Time.deltaTime;
-        if (_stateTimer <= 0f)
+        bool stillHasStamina = _runtimeState.ConsumeStaminaOverTime(_stats.DashStaminaDrainPerSecond, Time.deltaTime);
+        if (!stillHasStamina)
         {
             CurrentState = PlayerActionState.Idle;
         }
