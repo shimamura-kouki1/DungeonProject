@@ -36,6 +36,14 @@ public class PlayerController : MonoBehaviour, IDamageable
     [SerializeField] private float _gravity = -20f;
     [SerializeField] private LayerMask _groundMask = ~0;
 
+    [Header("攻撃判定")]
+    [SerializeField] private float _attackRadius = 1.2f;
+    [SerializeField] private float _attackForwardOffset = 1.2f;
+    [SerializeField, Range(0f, 1f)] private float _attackHitTiming = 0.3f; // 攻撃モーションのどこで当てるか
+    [SerializeField] private LayerMask _attackTargetMask = ~0;
+
+    private bool _attackHitDone;
+
     private CharacterController _controller;
     private PlayerRuntimeState _runtimeState;
 
@@ -318,16 +326,36 @@ public class PlayerController : MonoBehaviour, IDamageable
         _stateTimer = _stats.AttackDuration;
         CurrentState = PlayerActionState.Attack;
 
+        _attackHitDone = false;
         // TODO(実装計画ステップ2以降): ここで武器の当たり判定を発生させ、
         // 範囲内のIDamageableに _stats.Attack を渡してダメージを与える。
     }
 
     private void UpdateAttack()
     {
-        _stateTimer -= Time.deltaTime;
-        if (_stateTimer <= 0f)
+        float elapsed = _stats.AttackDuration - _stateTimer;
+        if (!_attackHitDone && elapsed >= _stats.AttackDuration * _attackHitTiming)
         {
-            CurrentState = PlayerActionState.Idle;
+            _attackHitDone = true;
+            DoAttackHit();
+        }
+
+        _stateTimer -= Time.deltaTime;
+        if (_stateTimer <= 0f) CurrentState = PlayerActionState.Idle;
+    }
+
+    private void DoAttackHit()
+    {
+        Vector3 center = transform.position + transform.forward * _attackForwardOffset + Vector3.up * 0.5f;
+        var hits = Physics.OverlapSphere(center, _attackRadius, _attackTargetMask, QueryTriggerInteraction.Ignore);
+        var damaged = new System.Collections.Generic.HashSet<IDamageable>();
+
+        foreach (var h in hits)
+        {
+            if (h.transform.IsChildOf(transform)) continue;                 // 自分は除外
+            if (!h.TryGetComponent(out IDamageable dmg)) continue;
+            if (!damaged.Add(dmg)) continue;                                // 同じ相手に二重ヒットしない
+            dmg.TakeDamage(_stats.Attack);
         }
     }
 

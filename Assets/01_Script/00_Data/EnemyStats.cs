@@ -20,6 +20,8 @@ public class EnemyStats : ScriptableObject
     public float AttackSpeed => _attackSpeed;
     public float Defense => _defense;
     public float DefenseK => _defenseK;
+    public float MoveSpeed => _moveSpeed;
+    public float RotationSpeed => _rotationSpeed;
 
     /// <summary>
     /// 被ダメージ軽減率 = DEF / (DEF + K)（仕様書1.3、確定仕様）
