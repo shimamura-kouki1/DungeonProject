@@ -1,5 +1,7 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Playables;
 
 /// <summary>
 /// プレイヤーの入力受付・移動・状態遷移を担当するMonoBehaviour。
@@ -40,6 +42,8 @@ public class PlayerController : MonoBehaviour, IDamageable
     private PlayerRuntimeState _runtimeState;
 
     public PlayerActionState CurrentState { get; private set; } = PlayerActionState.Idle;
+    public float NormalizedSpeed { get; private set; }
+    public event Action<PlayerActionState> StateChanged;
     public PlayerRuntimeState RuntimeState => _runtimeState;
 
     // IDamageable委譲
@@ -98,6 +102,13 @@ public class PlayerController : MonoBehaviour, IDamageable
         }
 
         ApplyGravity();
+
+        NormalizedSpeed = CurrentState switch
+        {
+            PlayerActionState.Move => _stats.MoveSpeed / _stats.DashSpeed,
+            PlayerActionState.Dash => 1f,
+            _ => 0f,
+        };
     }
 
     // ---------------- 入力 ----------------
@@ -375,5 +386,12 @@ public class PlayerController : MonoBehaviour, IDamageable
         {
             _runtimeState.TakeDamage(rawAttackValue);
         }
+    }
+
+    private void SetState(PlayerActionState next)
+    {
+        if (CurrentState == next) return;
+        CurrentState = next;
+        StateChanged?.Invoke(next);
     }
 }
