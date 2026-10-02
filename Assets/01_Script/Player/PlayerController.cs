@@ -173,7 +173,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         {
             if(CurrentState == PlayerActionState.Dash)
             {
-                CurrentState = PlayerActionState.Idle;
+                SetState(PlayerActionState.Idle);
             }
         }
     
@@ -197,7 +197,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         {
             if (CurrentState == PlayerActionState.Guard)
             {
-                CurrentState = PlayerActionState.Idle;
+                SetState(PlayerActionState.Idle);
             }
         }
     }
@@ -233,12 +233,12 @@ public class PlayerController : MonoBehaviour, IDamageable
     {
         if (_moveDirWorld.sqrMagnitude > 0.0001f)
         {
-            CurrentState = PlayerActionState.Move;
+            SetState(PlayerActionState.Move);
             Move(_moveDirWorld, _stats.MoveSpeed);
         }
         else
         {
-            CurrentState = PlayerActionState.Idle;
+            SetState(PlayerActionState.Idle);
         }
     }
 
@@ -249,7 +249,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         // スタミナが1でも残っていれば開始できる（枯渇していたら開始不可）
         if (_runtimeState.CurrentStamina <= 0f) return;
 
-        CurrentState = PlayerActionState.Dash;
+        SetState(PlayerActionState.Dash);
     }
 
     private void UpdateDash()
@@ -261,7 +261,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         _runtimeState.ConsumeStaminaOverTime(_stats.DashStaminaDrainPerSecond, Time.deltaTime);
         if (_runtimeState.CurrentStamina <= 0f)
         {
-            CurrentState = PlayerActionState.Idle;
+            SetState(PlayerActionState.Idle);
         }
     }
 
@@ -274,7 +274,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         _stateMoveDirection = _moveDirWorld.sqrMagnitude > 0.0001f ? _moveDirWorld : transform.forward;
         _stateTimer = _stats.DodgeDuration;
         _runtimeState.IsInvincible = true;
-        CurrentState = PlayerActionState.Dodge;
+        SetState(PlayerActionState.Dodge);
 
         // 無敵時間はDodgeDuration以下で個別に切れる想定（DodgeInvincibleDuration）
         Invoke(nameof(EndInvincibility), _stats.DodgeInvincibleDuration);
@@ -292,7 +292,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         _stateTimer -= Time.deltaTime;
         if (_stateTimer <= 0f)
         {
-            CurrentState = PlayerActionState.Idle;
+            SetState(PlayerActionState.Idle);
         }
     }
 
@@ -301,7 +301,7 @@ public class PlayerController : MonoBehaviour, IDamageable
     private void TryStartGuard()
     {
         // ガード開始の最低コストチェックはせず、継続的に減らしていく
-        CurrentState = PlayerActionState.Guard;
+        SetState(PlayerActionState.Guard);
     }
 
     private void UpdateGuard()
@@ -314,7 +314,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         if (!stillHasStamina)
         {
             // ガードブレイク
-            CurrentState = PlayerActionState.Idle;
+            SetState(PlayerActionState.Idle);
         }
 
         // ガード中は移動しない（MVP方針。移動しながらのガードは後で検討）
@@ -324,10 +324,11 @@ public class PlayerController : MonoBehaviour, IDamageable
 
     private void TryStartAttack()
     {
+        Debug.Log("攻撃開始");
         if (!_runtimeState.TryConsumeStamina(_stats.AttackStaminaCost)) return;
 
         _stateTimer = _stats.AttackDuration;
-        CurrentState = PlayerActionState.Attack;
+        SetState(PlayerActionState.Attack);
 
         // TODO(実装計画ステップ2以降): ここで武器の当たり判定を発生させ、
         // 範囲内のIDamageableに _stats.Attack を渡してダメージを与える。
@@ -338,7 +339,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         _stateTimer -= Time.deltaTime;
         if (_stateTimer <= 0f)
         {
-            CurrentState = PlayerActionState.Idle;
+            SetState(PlayerActionState.Idle);
         }
     }
 

@@ -9,7 +9,7 @@ public class PlayerAnimator : MonoBehaviour
 
     static readonly int SpeedHash = Animator.StringToHash("Speed");
     static readonly int AttackHash = Animator.StringToHash("Attack");
-    static readonly int DodgeHash = Animator.StringToHash("Doge");
+    static readonly int DodgeHash = Animator.StringToHash("Dodge");
     static readonly int GuardHash = Animator.StringToHash("Guard");
 
     private void Awake()
