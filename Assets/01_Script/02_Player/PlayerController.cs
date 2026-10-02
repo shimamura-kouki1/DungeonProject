@@ -1,5 +1,7 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Playables;
 
 /// <summary>
 /// プレイヤーの入力受付・移動・状態遷移を担当するMonoBehaviour。
@@ -36,18 +38,12 @@ public class PlayerController : MonoBehaviour, IDamageable
     [SerializeField] private float _gravity = -20f;
     [SerializeField] private LayerMask _groundMask = ~0;
 
-    [Header("攻撃判定")]
-    [SerializeField] private float _attackRadius = 1.2f;
-    [SerializeField] private float _attackForwardOffset = 1.2f;
-    [SerializeField, Range(0f, 1f)] private float _attackHitTiming = 0.3f; // 攻撃モーションのどこで当てるか
-    [SerializeField] private LayerMask _attackTargetMask = ~0;
-
-    private bool _attackHitDone;
-
     private CharacterController _controller;
     private PlayerRuntimeState _runtimeState;
 
     public PlayerActionState CurrentState { get; private set; } = PlayerActionState.Idle;
+    public float NormalizedSpeed { get; private set; }
+    public event Action<PlayerActionState> StateChanged;
     public PlayerRuntimeState RuntimeState => _runtimeState;
 
     // IDamageable委譲
@@ -106,6 +102,13 @@ public class PlayerController : MonoBehaviour, IDamageable
         }
 
         ApplyGravity();
+
+        NormalizedSpeed = CurrentState switch
+        {
+            PlayerActionState.Move => _stats.MoveSpeed / _stats.DashSpeed,
+            PlayerActionState.Dash => 1f,
+            _ => 0f,
+        };
     }
 
     // ---------------- 入力 ----------------
@@ -170,7 +173,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         {
             if(CurrentState == PlayerActionState.Dash)
             {
-                CurrentState = PlayerActionState.Idle;
+                SetState(PlayerActionState.Idle);
             }
         }
     
@@ -194,7 +197,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         {
             if (CurrentState == PlayerActionState.Guard)
             {
-                CurrentState = PlayerActionState.Idle;
+                SetState(PlayerActionState.Idle);
             }
         }
     }
@@ -230,12 +233,12 @@ public class PlayerController : MonoBehaviour, IDamageable
     {
         if (_moveDirWorld.sqrMagnitude > 0.0001f)
         {
-            CurrentState = PlayerActionState.Move;
+            SetState(PlayerActionState.Move);
             Move(_moveDirWorld, _stats.MoveSpeed);
         }
         else
         {
-            CurrentState = PlayerActionState.Idle;
+            SetState(PlayerActionState.Idle);
         }
     }
 
@@ -246,7 +249,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         // スタミナが1でも残っていれば開始できる（枯渇していたら開始不可）
         if (_runtimeState.CurrentStamina <= 0f) return;
 
-        CurrentState = PlayerActionState.Dash;
+        SetState(PlayerActionState.Dash);
     }
 
     private void UpdateDash()
@@ -258,7 +261,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         _runtimeState.ConsumeStaminaOverTime(_stats.DashStaminaDrainPerSecond, Time.deltaTime);
         if (_runtimeState.CurrentStamina <= 0f)
         {
-            CurrentState = PlayerActionState.Idle;
+            SetState(PlayerActionState.Idle);
         }
     }
 
@@ -271,7 +274,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         _stateMoveDirection = _moveDirWorld.sqrMagnitude > 0.0001f ? _moveDirWorld : transform.forward;
         _stateTimer = _stats.DodgeDuration;
         _runtimeState.IsInvincible = true;
-        CurrentState = PlayerActionState.Dodge;
+        SetState(PlayerActionState.Dodge);
 
         // 無敵時間はDodgeDuration以下で個別に切れる想定（DodgeInvincibleDuration）
         Invoke(nameof(EndInvincibility), _stats.DodgeInvincibleDuration);
@@ -289,7 +292,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         _stateTimer -= Time.deltaTime;
         if (_stateTimer <= 0f)
         {
-            CurrentState = PlayerActionState.Idle;
+            SetState(PlayerActionState.Idle);
         }
     }
 
@@ -298,7 +301,7 @@ public class PlayerController : MonoBehaviour, IDamageable
     private void TryStartGuard()
     {
         // ガード開始の最低コストチェックはせず、継続的に減らしていく
-        CurrentState = PlayerActionState.Guard;
+        SetState(PlayerActionState.Guard);
     }
 
     private void UpdateGuard()
@@ -311,7 +314,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         if (!stillHasStamina)
         {
             // ガードブレイク
-            CurrentState = PlayerActionState.Idle;
+            SetState(PlayerActionState.Idle);
         }
 
         // ガード中は移動しない（MVP方針。移動しながらのガードは後で検討）
@@ -321,41 +324,22 @@ public class PlayerController : MonoBehaviour, IDamageable
 
     private void TryStartAttack()
     {
+        Debug.Log("攻撃開始");
         if (!_runtimeState.TryConsumeStamina(_stats.AttackStaminaCost)) return;
 
         _stateTimer = _stats.AttackDuration;
-        CurrentState = PlayerActionState.Attack;
+        SetState(PlayerActionState.Attack);
 
-        _attackHitDone = false;
         // TODO(実装計画ステップ2以降): ここで武器の当たり判定を発生させ、
         // 範囲内のIDamageableに _stats.Attack を渡してダメージを与える。
     }
 
     private void UpdateAttack()
     {
-        float elapsed = _stats.AttackDuration - _stateTimer;
-        if (!_attackHitDone && elapsed >= _stats.AttackDuration * _attackHitTiming)
-        {
-            _attackHitDone = true;
-            DoAttackHit();
-        }
-
         _stateTimer -= Time.deltaTime;
-        if (_stateTimer <= 0f) CurrentState = PlayerActionState.Idle;
-    }
-
-    private void DoAttackHit()
-    {
-        Vector3 center = transform.position + transform.forward * _attackForwardOffset + Vector3.up * 0.5f;
-        var hits = Physics.OverlapSphere(center, _attackRadius, _attackTargetMask, QueryTriggerInteraction.Ignore);
-        var damaged = new System.Collections.Generic.HashSet<IDamageable>();
-
-        foreach (var h in hits)
+        if (_stateTimer <= 0f)
         {
-            if (h.transform.IsChildOf(transform)) continue;                 // 自分は除外
-            if (!h.TryGetComponent(out IDamageable dmg)) continue;
-            if (!damaged.Add(dmg)) continue;                                // 同じ相手に二重ヒットしない
-            dmg.TakeDamage(_stats.Attack);
+            SetState(PlayerActionState.Idle);
         }
     }
 
@@ -403,5 +387,12 @@ public class PlayerController : MonoBehaviour, IDamageable
         {
             _runtimeState.TakeDamage(rawAttackValue);
         }
+    }
+
+    private void SetState(PlayerActionState next)
+    {
+        if (CurrentState == next) return;
+        CurrentState = next;
+        StateChanged?.Invoke(next);
     }
 }
