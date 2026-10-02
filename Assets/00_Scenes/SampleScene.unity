@@ -599,6 +599,82 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.size
+      value: 21
+      objectReference: {fileID: 0}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.data[19].m_ActionId
+      value: 678f3a6f-8180-4811-a575-ff80a056d5ac
+      objectReference: {fileID: 0}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.data[20].m_ActionId
+      value: d5a17394-9e9b-4480-bf05-97f0db69a4d6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.data[19].m_ActionName
+      value: Player/Dodge
+      objectReference: {fileID: 0}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.data[20].m_ActionName
+      value: Player/Guard
+      objectReference: {fileID: 0}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.data[19].m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.data[20].m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.data[19].m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.data[20].m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.data[19].m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1023408682}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.data[20].m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1023408682}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.data[19].m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.data[20].m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.data[19].m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: OnDodge
+      objectReference: {fileID: 0}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.data[20].m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: OnGuard
+      objectReference: {fileID: 0}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.data[19].m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: PlayerController, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.data[20].m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: PlayerController, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.data[19].m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 7954728847651060684, guid: 46f2233c0c5c36c43806605649de43da, type: 3}
+      propertyPath: m_ActionEvents.Array.data[20].m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

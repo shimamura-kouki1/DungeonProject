@@ -18,7 +18,11 @@ public class PlayerAnimator : MonoBehaviour
         if (_controller == null)
             _controller = GetComponentInParent<PlayerController>();
     }
-    private void OnEnable() => _controller.StateChanged += OnStateChanged;
+    private void OnEnable()
+    {
+        _controller.StateChanged += OnStateChanged;
+        _animator.SetBool(GuardHash, _controller.CurrentState == PlayerController.PlayerActionState.Guard);
+    }
     private void OnDisable() => _controller.StateChanged -= OnStateChanged;
 
     private void Update()
