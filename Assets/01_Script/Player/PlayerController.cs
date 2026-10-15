@@ -375,6 +375,26 @@ public class PlayerController : MonoBehaviour, IDamageable
         _controller.Move(_velocity * Time.deltaTime);
     }
 
+    /// <summary>
+    /// 新しくアクションできるかの判定
+    /// </summary>
+    /// <returns></returns>
+    private bool CanExecuteAction()
+    {
+        return CurrentState == PlayerActionState.Idle || CurrentState == PlayerActionState.Move;
+    }
+
+    private bool TryStartAction(PlayerActionState nextState)
+    {
+        if (!CanExecuteAction())
+        {
+            return false;
+        }
+
+        SetState(nextState);
+        return true;
+    }
+
     // ---------------- IDamageable ----------------
 
     public void TakeDamage(float rawAttackValue)
