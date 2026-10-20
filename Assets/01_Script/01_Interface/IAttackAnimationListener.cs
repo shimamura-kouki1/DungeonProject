@@ -1,4 +1,4 @@
-public interface IAttackAnimationListener
+public interface IAttackAnimationListener:ICancelWindowListener
 {
     void OnAttackAnimationFinished();
 }

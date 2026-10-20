@@ -37,4 +37,7 @@ public class PlayerAnimator : MonoBehaviour
         if (state == PlayerController.PlayerActionState.Attack) _animator.SetTrigger(AttackHash);
         if (state == PlayerController.PlayerActionState.Dodge) _animator.SetTrigger(DodgeHash);
     }
+
+    public void OnCancelWindowChanged (PlayerController.PlayerActionState owner, bool open, CancelTarget targets)
+        => _controller.OnCancelWindowChanged(owner, open, targets);
 }
