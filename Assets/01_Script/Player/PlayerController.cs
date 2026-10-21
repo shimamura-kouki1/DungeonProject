@@ -32,6 +32,8 @@ public class PlayerController : MonoBehaviour, IDamageable
     [Header("参照")]
     [SerializeField] private PlayerStats _stats;
     [SerializeField] private Camera _referenceCamera; // 未指定ならCamera.mainを使用
+    [SerializeField] private CameraRig _cameraRig;
+    private CameraViewMode _cameraViewMode = CameraViewMode.ThirdPerson;
 
     [Header("接地判定")]
     [SerializeField] private float _gravity = -20f;
@@ -57,8 +59,16 @@ public class PlayerController : MonoBehaviour, IDamageable
     private float _stateTimer;
     private Vector3 _stateMoveDirection; // Dash/Dodge中に使う固定移動方向
 
-    private bool _cancelOpen;
-    private CancelTarget _cancelTargets;
+    private void OnEnable()
+    {
+        if (_cameraRig != null) _cameraRig.ViewModeChanged += OnViewModeChanged;
+    }
+
+    private void OnDisable()
+    {
+        if (_cameraRig != null) _cameraRig.ViewModeChanged -= OnViewModeChanged;
+    }
+
     private void Awake()
     {
         _controller = GetComponent<CharacterController>();
@@ -78,9 +88,15 @@ public class PlayerController : MonoBehaviour, IDamageable
         }
     }
 
+    private void Start()
+    {
+        if (_cameraRig != null) _cameraViewMode = _cameraRig.ViewMode;
+    }
+
     private void Update()
     {
         _runtimeState.TickStaminaRegen(Time.deltaTime);
+        _moveDirWorld = CameraRelativeDirection(_moveInput);
 
         switch (CurrentState)
         {
@@ -102,6 +118,7 @@ public class PlayerController : MonoBehaviour, IDamageable
                 break;
         }
 
+        UpdateFacing();
         ApplyGravity();
 
         NormalizedSpeed = CurrentState switch
@@ -117,7 +134,6 @@ public class PlayerController : MonoBehaviour, IDamageable
     public void OnMove(InputAction.CallbackContext context)
     {
         _moveInput = context.ReadValue<Vector2>();
-        _moveDirWorld = CameraRelativeDirection(_moveInput);
     }
 
     /// <summary>
@@ -131,7 +147,10 @@ public class PlayerController : MonoBehaviour, IDamageable
             return;
         }
 
-        if (!CanStartAction(CancelTarget.Attack)) return;
+        if (!CanStartNewAction())
+        {
+            return;
+        }
 
         TryStartAttack();
     }
@@ -146,7 +165,10 @@ public class PlayerController : MonoBehaviour, IDamageable
             return;
         }
 
-        if (!CanStartAction(CancelTarget.Dodge)) return;
+        if (!CanStartNewAction())
+        {
+            return;
+        }
 
         TryStartDodge();
     }
@@ -158,7 +180,7 @@ public class PlayerController : MonoBehaviour, IDamageable
     {
         if (context.started)
         {
-            if (CanStartAction(CancelTarget.Dash))
+            if (CanStartNewAction())
             {
                 TryStartDash();
             }
@@ -182,7 +204,7 @@ public class PlayerController : MonoBehaviour, IDamageable
     {
         if (context.started)
         {
-            if (CanStartAction(CancelTarget.Guard))
+            if (CanStartNewAction())
             {
                 TryStartGuard();
             }
@@ -322,7 +344,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         Debug.Log("攻撃開始");
         if (!_runtimeState.TryConsumeStamina(_stats.AttackStaminaCost)) return;
 
-        _stateTimer = _stats.AttackDuration * 2;
+        _stateTimer = _stats.AttackDuration;
         SetState(PlayerActionState.Attack);
 
         // TODO(実装計画ステップ2以降): ここで武器の当たり判定を発生させ、
@@ -345,7 +367,18 @@ public class PlayerController : MonoBehaviour, IDamageable
         if (direction.sqrMagnitude < 0.0001f) return;
 
         _controller.Move(direction.normalized * speed * Time.deltaTime);
-        RotateTowards(direction);
+
+        if (_cameraViewMode == CameraViewMode.ThirdPerson)
+        {
+            RotateTowards(direction);
+        }
+    }
+
+    private void UpdateFacing()
+    {
+        if (_cameraViewMode != CameraViewMode.FirstPerson || _referenceCamera == null) return;
+
+        transform.rotation = Quaternion.Euler(0f,_referenceCamera.transform.eulerAngles.y,0f);
     }
 
     private void RotateTowards(Vector3 direction)
@@ -370,31 +403,14 @@ public class PlayerController : MonoBehaviour, IDamageable
         _controller.Move(_velocity * Time.deltaTime);
     }
 
-    /// <summary>
-    /// 新しくアクションできるかの判定
-    /// </summary>
-    /// <returns></returns>
-    private bool CanExecuteAction()
-    {
-        return CurrentState == PlayerActionState.Idle || CurrentState == PlayerActionState.Move;
-    }
-
-    private bool TryStartAction(PlayerActionState nextState)
-    {
-        if (!CanExecuteAction())
-        {
-            return false;
-        }
-
-        SetState(nextState);
-        return true;
-    }
-
     // ---------------- IDamageable ----------------
 
     public void TakeDamage(float rawAttackValue)
     {
-        if (IsDead || _runtimeState.IsInvincible) return;
+        if(IsDead || _runtimeState.IsInvincible)
+        {
+            return;
+        }
 
         if (CurrentState == PlayerActionState.Guard)
         {
@@ -410,41 +426,8 @@ public class PlayerController : MonoBehaviour, IDamageable
     {
         if (CurrentState == next) return;
         CurrentState = next;
-        _cancelOpen = false;
-        _cancelTargets = CancelTarget.None;
         StateChanged?.Invoke(next);
     }
 
-
-    //-------------------SMB--------------------------
-
-    // View(PlayerAnimator)から呼ばれる
-    public void OnCancelWindowChanged(PlayerActionState owner, bool open, CancelTarget targets)
-    {
-        // 遷移中は新Enter→旧Exitの順で来るため、現在の状態の通知だけ受ける
-        if (owner != CurrentState) return;
-        _cancelOpen = open;
-        _cancelTargets = open ? targets : CancelTarget.None;
-    }
-
-    /// <summary>入力による新規行動の可否。通常時、またはキャンセル区間内で対象が許可されている場合</summary>
-    private bool CanStartAction(CancelTarget target)
-    {
-        if (CanStartNewAction()) return true;
-        return _cancelOpen && (_cancelTargets & target) != 0;
-    }
-
-    /// <summary>被弾硬直・ガードブレイクなど、区間を無視した強制割り込み</summary>
-    public void ForceInterrupt(PlayerActionState next = PlayerActionState.Idle)
-    {
-        CancelInvoke(nameof(EndInvincibility));
-        _runtimeState.IsInvincible = false;
-        SetState(next);
-    }
-
-    public void OnAttackAnimationFinished()
-    {
-        if (CurrentState == PlayerActionState.Attack)
-            SetState(PlayerActionState.Idle);
-    }
+    private void OnViewModeChanged(CameraViewMode mode) => _cameraViewMode = mode;
 }

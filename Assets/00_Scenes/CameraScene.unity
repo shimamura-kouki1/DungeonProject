@@ -277,20 +277,10 @@ MonoBehaviour:
   _blendSpeed: 10
   _initialPitch: 15
   _collisionMask:
+    serializedVersion: 2
     m_Bits: 4294967295
   _recoverSpeed: 8
   _hideModelDistance: 0.3
-  _camera: {fileID: 0}
-  _targetRenderers: []
-  _modelHidden: 0
-  _profileIndex: 0
-  _yaw: 0
-  _pitch: 0
-  _distanceFraction: 1
-  _pivotOffset: {x: 0, y: 0, z: 0}
-  _shoulderOffset: {x: 0, y: 0, z: 0}
-  _distance: 0
-  _fov: 0
 --- !u!114 &330585549
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -312,25 +302,6 @@ MonoBehaviour:
   _stickCurve: 1.5
   _invertStickY: 0
   _lockCursorOnStart: 1
-  _look:
-    m_Name: 
-    m_Type: 0
-    m_ExpectedControlType: 
-    m_Id: 6279a005-dd82-4612-8011-554844632cf3
-    m_Processors: 
-    m_Interactions: 
-    m_SingletonActionBindings: []
-    m_Flags: 0
-  _switchView:
-    m_Name: 
-    m_Type: 0
-    m_ExpectedControlType: 
-    m_Id: 5048c6da-627e-4642-8cc3-252e51f99ed7
-    m_Processors: 
-    m_Interactions: 
-    m_SingletonActionBindings: []
-    m_Flags: 0
-  _lastWasGamepad: 0
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
