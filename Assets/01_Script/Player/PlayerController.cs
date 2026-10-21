@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Playables;
 
 /// <summary>
 /// プレイヤーの入力受付・移動・状態遷移を担当するMonoBehaviour。
@@ -33,6 +32,8 @@ public class PlayerController : MonoBehaviour, IDamageable
     [Header("参照")]
     [SerializeField] private PlayerStats _stats;
     [SerializeField] private Camera _referenceCamera; // 未指定ならCamera.mainを使用
+    [SerializeField] private CameraRig _cameraRig;
+    private CameraViewMode _cameraViewMode = CameraViewMode.ThirdPerson;
 
     [Header("接地判定")]
     [SerializeField] private float _gravity = -20f;
@@ -58,6 +59,16 @@ public class PlayerController : MonoBehaviour, IDamageable
     private float _stateTimer;
     private Vector3 _stateMoveDirection; // Dash/Dodge中に使う固定移動方向
 
+    private void OnEnable()
+    {
+        if (_cameraRig != null) _cameraRig.ViewModeChanged += OnViewModeChanged;
+    }
+
+    private void OnDisable()
+    {
+        if (_cameraRig != null) _cameraRig.ViewModeChanged -= OnViewModeChanged;
+    }
+
     private void Awake()
     {
         _controller = GetComponent<CharacterController>();
@@ -77,9 +88,15 @@ public class PlayerController : MonoBehaviour, IDamageable
         }
     }
 
+    private void Start()
+    {
+        if (_cameraRig != null) _cameraViewMode = _cameraRig.ViewMode;
+    }
+
     private void Update()
     {
         _runtimeState.TickStaminaRegen(Time.deltaTime);
+        _moveDirWorld = CameraRelativeDirection(_moveInput);
 
         switch (CurrentState)
         {
@@ -101,6 +118,7 @@ public class PlayerController : MonoBehaviour, IDamageable
                 break;
         }
 
+        UpdateFacing();
         ApplyGravity();
 
         NormalizedSpeed = CurrentState switch
@@ -116,7 +134,6 @@ public class PlayerController : MonoBehaviour, IDamageable
     public void OnMove(InputAction.CallbackContext context)
     {
         _moveInput = context.ReadValue<Vector2>();
-        _moveDirWorld = CameraRelativeDirection(_moveInput);
     }
 
     /// <summary>
@@ -169,14 +186,14 @@ public class PlayerController : MonoBehaviour, IDamageable
             }
         }
 
-        if(context.canceled)
+        if (context.canceled)
         {
-            if(CurrentState == PlayerActionState.Dash)
+            if (CurrentState == PlayerActionState.Dash)
             {
                 SetState(PlayerActionState.Idle);
             }
         }
-    
+
     }
 
     /// <summary>
@@ -350,7 +367,18 @@ public class PlayerController : MonoBehaviour, IDamageable
         if (direction.sqrMagnitude < 0.0001f) return;
 
         _controller.Move(direction.normalized * speed * Time.deltaTime);
-        RotateTowards(direction);
+
+        if (_cameraViewMode == CameraViewMode.ThirdPerson)
+        {
+            RotateTowards(direction);
+        }
+    }
+
+    private void UpdateFacing()
+    {
+        if (_cameraViewMode != CameraViewMode.FirstPerson || _referenceCamera == null) return;
+
+        transform.rotation = Quaternion.Euler(0f,_referenceCamera.transform.eulerAngles.y,0f);
     }
 
     private void RotateTowards(Vector3 direction)
@@ -379,6 +407,11 @@ public class PlayerController : MonoBehaviour, IDamageable
 
     public void TakeDamage(float rawAttackValue)
     {
+        if(IsDead || _runtimeState.IsInvincible)
+        {
+            return;
+        }
+
         if (CurrentState == PlayerActionState.Guard)
         {
             _runtimeState.TakeGuardedDamage(rawAttackValue);
@@ -395,4 +428,6 @@ public class PlayerController : MonoBehaviour, IDamageable
         CurrentState = next;
         StateChanged?.Invoke(next);
     }
+
+    private void OnViewModeChanged(CameraViewMode mode) => _cameraViewMode = mode;
 }
