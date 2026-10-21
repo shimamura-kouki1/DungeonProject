@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Playables;
 
 /// <summary>
 /// プレイヤーの入力受付・移動・状態遷移を担当するMonoBehaviour。
@@ -159,20 +158,20 @@ public class PlayerController : MonoBehaviour, IDamageable
     {
         if (context.started)
         {
-            if (CanStartNewAction())
+            if (CanStartAction(CancelTarget.Dash))
             {
                 TryStartDash();
             }
         }
 
-        if(context.canceled)
+        if (context.canceled)
         {
-            if(CurrentState == PlayerActionState.Dash)
+            if (CurrentState == PlayerActionState.Dash)
             {
                 SetState(PlayerActionState.Idle);
             }
         }
-    
+
     }
 
     /// <summary>
@@ -183,7 +182,7 @@ public class PlayerController : MonoBehaviour, IDamageable
     {
         if (context.started)
         {
-            if (CanStartNewAction())
+            if (CanStartAction(CancelTarget.Guard))
             {
                 TryStartGuard();
             }
@@ -323,7 +322,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         Debug.Log("攻撃開始");
         if (!_runtimeState.TryConsumeStamina(_stats.AttackStaminaCost)) return;
 
-        _stateTimer = _stats.AttackDuration;
+        _stateTimer = _stats.AttackDuration * 2;
         SetState(PlayerActionState.Attack);
 
         // TODO(実装計画ステップ2以降): ここで武器の当たり判定を発生させ、
@@ -395,6 +394,8 @@ public class PlayerController : MonoBehaviour, IDamageable
 
     public void TakeDamage(float rawAttackValue)
     {
+        if (IsDead || _runtimeState.IsInvincible) return;
+
         if (CurrentState == PlayerActionState.Guard)
         {
             _runtimeState.TakeGuardedDamage(rawAttackValue);
@@ -439,5 +440,11 @@ public class PlayerController : MonoBehaviour, IDamageable
         CancelInvoke(nameof(EndInvincibility));
         _runtimeState.IsInvincible = false;
         SetState(next);
+    }
+
+    public void OnAttackAnimationFinished()
+    {
+        if (CurrentState == PlayerActionState.Attack)
+            SetState(PlayerActionState.Idle);
     }
 }

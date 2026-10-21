@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public abstract class PlayerSMBBass<TListener> : StateMachineBehaviour where TListener : class
+public abstract class PlayerSMBBase<TListener> : StateMachineBehaviour where TListener : class
 {
    protected TListener Listener {  get; private set; }
 

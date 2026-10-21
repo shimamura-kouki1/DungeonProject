@@ -1,7 +1,7 @@
 using UnityEngine;
 using static NormalizedWindow;
 
-public class AttackBehaviour : PlayerSMBBass<IAttackAnimationListener>
+public class AttackBehaviour : PlayerSMBBase<IAttackAnimationListener>
 {
     [SerializeField] private CancelWindowSetting _cancel = new();
 

@@ -1,8 +1,7 @@
 using UnityEngine;
-using static UnityEngine.CullingGroup;
 
 [RequireComponent(typeof(Animator))]
-public class PlayerAnimator : MonoBehaviour
+public class PlayerAnimator : MonoBehaviour, IAttackAnimationListener
 {
     [SerializeField] private PlayerController _controller;
     private Animator _animator;
@@ -17,6 +16,10 @@ public class PlayerAnimator : MonoBehaviour
         _animator = GetComponent<Animator>();
         if (_controller == null)
             _controller = GetComponentInParent<PlayerController>();
+
+        // これが無いと Listener が null のままで、SMBは何も通知しない
+        foreach (var smb in _animator.GetBehaviours<AttackBehaviour>())
+            smb.Init(this);
     }
     private void OnEnable()
     {
@@ -40,4 +43,6 @@ public class PlayerAnimator : MonoBehaviour
 
     public void OnCancelWindowChanged (PlayerController.PlayerActionState owner, bool open, CancelTarget targets)
         => _controller.OnCancelWindowChanged(owner, open, targets);
+
+    public void OnAttackAnimationFinished() =>OnAttackAnimationFinished();
 }
