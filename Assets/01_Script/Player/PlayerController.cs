@@ -59,6 +59,9 @@ public class PlayerController : MonoBehaviour, IDamageable
     private float _stateTimer;
     private Vector3 _stateMoveDirection; // Dash/Dodge中に使う固定移動方向
 
+    private bool _cancelOpen;
+    private CancelTarget _cancelTargets;
+
     private void OnEnable()
     {
         if (_cameraRig != null) _cameraRig.ViewModeChanged += OnViewModeChanged;
@@ -147,10 +150,7 @@ public class PlayerController : MonoBehaviour, IDamageable
             return;
         }
 
-        if (!CanStartNewAction())
-        {
-            return;
-        }
+        if (!CanStartAction(CancelTarget.Attack)) return;
 
         TryStartAttack();
     }
@@ -165,10 +165,7 @@ public class PlayerController : MonoBehaviour, IDamageable
             return;
         }
 
-        if (!CanStartNewAction())
-        {
-            return;
-        }
+        if (!CanStartAction(CancelTarget.Dodge)) return;
 
         TryStartDodge();
     }
@@ -180,7 +177,7 @@ public class PlayerController : MonoBehaviour, IDamageable
     {
         if (context.started)
         {
-            if (CanStartNewAction())
+            if (CanStartAction(CancelTarget.Dash))
             {
                 TryStartDash();
             }
@@ -204,7 +201,7 @@ public class PlayerController : MonoBehaviour, IDamageable
     {
         if (context.started)
         {
-            if (CanStartNewAction())
+            if (CanStartAction(CancelTarget.Guard))
             {
                 TryStartGuard();
             }
@@ -426,8 +423,36 @@ public class PlayerController : MonoBehaviour, IDamageable
     {
         if (CurrentState == next) return;
         CurrentState = next;
+        _cancelOpen = false;
+        _cancelTargets = CancelTarget.None;
         StateChanged?.Invoke(next);
     }
 
     private void OnViewModeChanged(CameraViewMode mode) => _cameraViewMode = mode;
+
+    //---------------------SMB--------------------
+
+    // View(PlayerAnimator)から呼ばれる
+    public void OnCancelWindowChanged(PlayerActionState owner, bool open, CancelTarget targets)
+    {
+        // 遷移中は新Enter→旧Exitの順で来るため、現在の状態の通知だけ受ける
+        if (owner != CurrentState) return;
+        _cancelOpen = open;
+        _cancelTargets = open ? targets : CancelTarget.None;
+    }
+
+    /// <summary>入力による新規行動の可否。通常時、またはキャンセル区間内で対象が許可されている場合</summary>
+    private bool CanStartAction(CancelTarget target)
+    {
+        if (CanStartNewAction()) return true;
+        return _cancelOpen && (_cancelTargets & target) != 0;
+    }
+
+    /// <summary>被弾硬直・ガードブレイクなど、区間を無視した強制割り込み</summary>
+    public void ForceInterrupt(PlayerActionState next = PlayerActionState.Idle)
+    {
+        CancelInvoke(nameof(EndInvincibility));
+        _runtimeState.IsInvincible = false;
+        SetState(next);
+    }
 }
