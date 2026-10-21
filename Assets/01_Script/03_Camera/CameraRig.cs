@@ -45,10 +45,10 @@ public class CameraRig : MonoBehaviour
     private float _distance;
     private float _fov;
 
-    public CameraProfile CurrentProfile => _profiles[_profileIndex];
+    public CameraProfile CurrentProfile => (_profiles != null && _profiles.Length > 0) ? _profiles[_profileIndex] : null;
 
     /// <summary>現在の視点の種類</summary>
-    public CameraViewMode ViewMode => CurrentProfile.ViewMode;
+    public CameraViewMode ViewMode => CurrentProfile != null ? CurrentProfile.ViewMode : CameraViewMode.ThirdPerson;
 
     /// <summary>視点の種類が変わったときに通知する(同じ種類のProfile間の切替では通知しない)</summary>
     public event Action<CameraViewMode> ViewModeChanged;
