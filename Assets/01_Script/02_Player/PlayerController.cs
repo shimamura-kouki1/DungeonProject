@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections.Generic;
 
 /// <summary>
 /// プレイヤーの入力受付・移動・状態遷移を担当するMonoBehaviour。
@@ -38,7 +39,8 @@ public class PlayerController : MonoBehaviour, IDamageable
     [Header("接地判定")]
     [SerializeField] private float _gravity = -20f;
     [SerializeField] private LayerMask _groundMask = ~0;
-
+    [SerializeField,Header("エネミーのレイヤーマスク")] private LayerMask _attackTargetMask = ~0;
+    private bool _attackHitDone;
     private CharacterController _controller;
     private PlayerRuntimeState _runtimeState;
 
@@ -354,9 +356,31 @@ public class PlayerController : MonoBehaviour, IDamageable
     private void UpdateAttack()
     {
         _stateTimer -= Time.deltaTime;
+        float elapsed = _stats.AttackDuration - _stateTimer;
+
+        if (! _attackHitDone && elapsed >= _stats.AttackDuration * _stats.AttackHitTiming)
+        {
+            _attackHitDone = true;
+            DealAttackDamage();
+        }
+
         if (_stateTimer <= 0f)
         {
             SetState(PlayerActionState.Idle);
+        }
+    }
+
+    private void DealAttackDamage()
+    {
+        Vector3 center = transform.position + transform.forward * _stats.AttackHitDistance + Vector3.up;
+        Collider[] cols = Physics.OverlapSphere(center, _stats.AttackHitRadius, _attackTargetMask, QueryTriggerInteraction.Ignore);
+
+        var alreadyHit = new HashSet<IDamageable>();
+        foreach (var col in cols)
+        {
+            var d = col.GetComponentInParent<IDamageable>();
+            if (d == null || ReferenceEquals(d, this) || d.IsDead || !alreadyHit.Add(d)) continue;
+            d.TakeDamage(_stats.Attack);
         }
     }
 

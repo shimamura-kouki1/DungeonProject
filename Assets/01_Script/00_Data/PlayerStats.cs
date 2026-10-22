@@ -46,6 +46,15 @@ public class PlayerStats : ScriptableObject
     [SerializeField] private float _attackStaminaCost = 10f;
     [SerializeField] private float _attackDuration = 0.4f; // 硬直時間（後でAttackSpeedと連動させる想定）
 
+    [Header("攻撃判定")]
+    [SerializeField] private float _attackHitDistance = 1.2f;
+    [SerializeField] private float _attackHitRadius = 1.0f;
+    [SerializeField, Range(0f, 1f)] private float _attackHitTiming = 0.4f; // AttackDurationに対する割合
+
+    public float AttackHitDistance => _attackHitDistance;
+    public float AttackHitRadius => _attackHitRadius;
+    public float AttackHitTiming => _attackHitTiming;
+
     [Header("スタミナ回復")]
     [SerializeField] private float _staminaRegenPerSecond = 20f;
     [SerializeField] private float _staminaRegenDelay = 0.5f; // 行動後、回復が始まるまでの待ち時間
